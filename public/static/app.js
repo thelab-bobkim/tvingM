@@ -25,8 +25,40 @@ function formatPrice(price) {
   return new Intl.NumberFormat('ko-KR').format(price) + '원';
 }
 
+// 인증 관련 함수
+function checkAuth() {
+  const token = localStorage.getItem('authToken');
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  
+  if (token && user) {
+    // 로그인 상태
+    document.getElementById('auth-links').classList.add('hidden');
+    document.getElementById('user-menu').classList.remove('hidden');
+    document.getElementById('user-name').textContent = user.name + '님';
+    return user;
+  } else {
+    // 비로그인 상태
+    document.getElementById('auth-links').classList.remove('hidden');
+    document.getElementById('user-menu').classList.add('hidden');
+    return null;
+  }
+}
+
+function handleLogout() {
+  localStorage.removeItem('authToken');
+  localStorage.removeItem('user');
+  alert('로그아웃되었습니다.');
+  location.reload();
+}
+
+function getAuthHeader() {
+  const token = localStorage.getItem('authToken');
+  return token ? { 'Authorization': `Bearer ${token}` } : {};
+}
+
 // 페이지 초기화
 document.addEventListener('DOMContentLoaded', async () => {
+  checkAuth();
   await loadProducts();
   await loadCart();
   updateCartCount();

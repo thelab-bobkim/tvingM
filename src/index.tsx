@@ -1,10 +1,12 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { serveStatic } from 'hono/cloudflare-workers'
+import { hashPassword, verifyPassword, generateSessionToken, getSessionExpiry, isValidEmail, isValidPassword } from './auth'
 
 type Bindings = {
   DB: D1Database
   TOSS_SECRET_KEY?: string
+  JWT_SECRET?: string
 }
 
 const app = new Hono<{ Bindings: Bindings }>()
@@ -16,7 +18,161 @@ app.use('/api/*', cors())
 app.use('/static/*', serveStatic({ root: './public' }))
 
 // ======================
-// API Routes
+// 인증 미들웨어
+// ======================
+async function authMiddleware(c: any, next: any) {
+  const token = c.req.header('Authorization')?.replace('Bearer ', '')
+  
+  if (!token) {
+    return c.json({ error: 'Unauthorized' }, 401)
+  }
+  
+  const { DB } = c.env
+  const session = await DB.prepare(`
+    SELECT us.*, u.id as user_id, u.email, u.name, u.is_admin
+    FROM user_sessions us
+    JOIN users u ON us.user_id = u.id
+    WHERE us.session_token = ? AND us.expires_at > datetime('now')
+  `).bind(token).first()
+  
+  if (!session) {
+    return c.json({ error: 'Invalid or expired session' }, 401)
+  }
+  
+  c.set('user', session)
+  await next()
+}
+
+// ======================
+// 인증 API Routes
+// ======================
+
+// 회원가입
+app.post('/api/auth/signup', async (c) => {
+  const { DB } = c.env
+  const { email, password, name, phone, marketingAgreed } = await c.req.json()
+  
+  // 유효성 검사
+  if (!isValidEmail(email)) {
+    return c.json({ error: '유효한 이메일 주소를 입력해주세요.' }, 400)
+  }
+  
+  if (!isValidPassword(password)) {
+    return c.json({ error: '비밀번호는 최소 8자 이상, 영문과 숫자를 포함해야 합니다.' }, 400)
+  }
+  
+  if (!name || name.trim().length < 2) {
+    return c.json({ error: '이름은 최소 2자 이상이어야 합니다.' }, 400)
+  }
+  
+  // 이메일 중복 확인
+  const existing = await DB.prepare('SELECT id FROM users WHERE email = ?').bind(email).first()
+  if (existing) {
+    return c.json({ error: '이미 가입된 이메일입니다.' }, 400)
+  }
+  
+  // 비밀번호 해싱
+  const passwordHash = await hashPassword(password)
+  
+  // 사용자 생성
+  const result = await DB.prepare(`
+    INSERT INTO users (email, password_hash, name, phone, marketing_agreed)
+    VALUES (?, ?, ?, ?, ?)
+  `).bind(email, passwordHash, name, phone || null, marketingAgreed ? 1 : 0).run()
+  
+  const userId = result.meta.last_row_id
+  
+  // 세션 생성
+  const sessionToken = generateSessionToken()
+  const expiresAt = getSessionExpiry()
+  
+  await DB.prepare(`
+    INSERT INTO user_sessions (user_id, session_token, expires_at)
+    VALUES (?, ?, ?)
+  `).bind(userId, sessionToken, expiresAt).run()
+  
+  return c.json({
+    success: true,
+    user: {
+      id: userId,
+      email,
+      name
+    },
+    token: sessionToken
+  })
+})
+
+// 로그인
+app.post('/api/auth/login', async (c) => {
+  const { DB } = c.env
+  const { email, password } = await c.req.json()
+  
+  // 사용자 조회
+  const user = await DB.prepare(`
+    SELECT id, email, password_hash, name, is_admin
+    FROM users WHERE email = ?
+  `).bind(email).first()
+  
+  if (!user) {
+    return c.json({ error: '이메일 또는 비밀번호가 일치하지 않습니다.' }, 401)
+  }
+  
+  // 비밀번호 확인
+  const valid = await verifyPassword(password, user.password_hash as string)
+  if (!valid) {
+    return c.json({ error: '이메일 또는 비밀번호가 일치하지 않습니다.' }, 401)
+  }
+  
+  // 마지막 로그인 시간 업데이트
+  await DB.prepare(`
+    UPDATE users SET last_login_at = datetime('now') WHERE id = ?
+  `).bind(user.id).run()
+  
+  // 세션 생성
+  const sessionToken = generateSessionToken()
+  const expiresAt = getSessionExpiry()
+  
+  await DB.prepare(`
+    INSERT INTO user_sessions (user_id, session_token, expires_at)
+    VALUES (?, ?, ?)
+  `).bind(user.id, sessionToken, expiresAt).run()
+  
+  return c.json({
+    success: true,
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      isAdmin: user.is_admin === 1
+    },
+    token: sessionToken
+  })
+})
+
+// 로그아웃
+app.post('/api/auth/logout', authMiddleware, async (c) => {
+  const { DB } = c.env
+  const token = c.req.header('Authorization')?.replace('Bearer ', '')
+  
+  await DB.prepare('DELETE FROM user_sessions WHERE session_token = ?').bind(token).run()
+  
+  return c.json({ success: true })
+})
+
+// 현재 사용자 정보
+app.get('/api/auth/me', authMiddleware, async (c) => {
+  const user = c.get('user')
+  
+  return c.json({
+    id: user.user_id,
+    email: user.email,
+    name: user.name,
+    isAdmin: user.is_admin === 1
+  })
+})
+
+// ======================
+// 상품 API Routes
 // ======================
 
 // 카테고리 목록

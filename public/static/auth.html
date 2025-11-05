@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로그인 / 회원가입 - NADA FASHION</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50">
+    <!-- 헤더 -->
+    <header class="bg-white shadow-sm">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <a href="/static/index.html">
+                    <h1 class="text-3xl font-bold text-pink-600">NADA FASHION</h1>
+                    <p class="text-sm text-gray-600">트렌디한 여성 의류와 슈즈</p>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- 메인 컨텐츠 -->
+    <main class="container mx-auto px-4 py-12">
+        <div class="max-w-md mx-auto">
+            <!-- 탭 -->
+            <div class="flex mb-8 bg-white rounded-lg shadow p-1">
+                <button onclick="showTab('login')" id="login-tab" class="flex-1 py-3 rounded-md font-semibold transition bg-pink-600 text-white">
+                    로그인
+                </button>
+                <button onclick="showTab('signup')" id="signup-tab" class="flex-1 py-3 rounded-md font-semibold transition text-gray-700">
+                    회원가입
+                </button>
+            </div>
+
+            <!-- 로그인 폼 -->
+            <div id="login-form" class="bg-white rounded-lg shadow p-8">
+                <h2 class="text-2xl font-bold mb-6">로그인</h2>
+                <form onsubmit="handleLogin(event)">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-2">이메일</label>
+                        <input type="email" id="login-email" required 
+                            class="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-600"
+                            placeholder="example@email.com">
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-gray-700 mb-2">비밀번호</label>
+                        <input type="password" id="login-password" required 
+                            class="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-600"
+                            placeholder="비밀번호를 입력하세요">
+                    </div>
+                    <button type="submit" class="w-full bg-pink-600 text-white py-3 rounded-lg font-semibold hover:bg-pink-700 transition">
+                        로그인
+                    </button>
+                </form>
+                
+                <div class="mt-6 text-center">
+                    <a href="#" class="text-sm text-gray-600 hover:text-pink-600">비밀번호를 잊으셨나요?</a>
+                </div>
+                
+                <div class="mt-8">
+                    <div class="relative">
+                        <div class="absolute inset-0 flex items-center">
+                            <div class="w-full border-t border-gray-300"></div>
+                        </div>
+                        <div class="relative flex justify-center text-sm">
+                            <span class="px-2 bg-white text-gray-500">또는</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 space-y-3">
+                        <button onclick="socialLogin('kakao')" class="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                            <img src="https://developers.kakao.com/assets/img/about/logos/kakaolink/kakaolink_btn_medium.png" class="h-5 mr-2">
+                            카카오로 시작하기
+                        </button>
+                        <button onclick="socialLogin('naver')" class="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                            <span class="font-semibold text-green-600 mr-2">N</span>
+                            네이버로 시작하기
+                        </button>
+                        <button onclick="socialLogin('google')" class="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                            <i class="fab fa-google text-red-500 mr-2"></i>
+                            구글로 시작하기
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 회원가입 폼 -->
+            <div id="signup-form" class="bg-white rounded-lg shadow p-8 hidden">
+                <h2 class="text-2xl font-bold mb-6">회원가입</h2>
+                <form onsubmit="handleSignup(event)">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-2">이메일 <span class="text-red-500">*</span></label>
+                        <input type="email" id="signup-email" required 
+                            class="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-600"
+                            placeholder="example@email.com">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-2">비밀번호 <span class="text-red-500">*</span></label>
+                        <input type="password" id="signup-password" required 
+                            class="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-600"
+                            placeholder="최소 8자, 영문+숫자">
+                        <p class="text-sm text-gray-500 mt-1">영문, 숫자를 포함한 8자 이상</p>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-2">비밀번호 확인 <span class="text-red-500">*</span></label>
+                        <input type="password" id="signup-password-confirm" required 
+                            class="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-600"
+                            placeholder="비밀번호를 다시 입력하세요">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-2">이름 <span class="text-red-500">*</span></label>
+                        <input type="text" id="signup-name" required 
+                            class="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-600"
+                            placeholder="홍길동">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-2">휴대폰 번호</label>
+                        <input type="tel" id="signup-phone" 
+                            class="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-600"
+                            placeholder="010-0000-0000">
+                    </div>
+                    
+                    <div class="mb-6 space-y-2">
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" id="terms-agree" required class="w-4 h-4 text-pink-600 rounded">
+                            <span class="text-sm">[필수] 이용약관 동의</span>
+                        </label>
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" id="privacy-agree" required class="w-4 h-4 text-pink-600 rounded">
+                            <span class="text-sm">[필수] 개인정보처리방침 동의</span>
+                        </label>
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" id="marketing-agree" class="w-4 h-4 text-pink-600 rounded">
+                            <span class="text-sm">[선택] 마케팅 정보 수신 동의</span>
+                        </label>
+                    </div>
+                    
+                    <button type="submit" class="w-full bg-pink-600 text-white py-3 rounded-lg font-semibold hover:bg-pink-700 transition">
+                        회원가입
+                    </button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <!-- 푸터 -->
+    <footer class="bg-gray-800 text-white py-8 mt-12">
+        <div class="container mx-auto px-4 text-center">
+            <p>&copy; 2024 NADA FASHION. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+    <script src="/static/auth.js"></script>
+</body>
+</html>
