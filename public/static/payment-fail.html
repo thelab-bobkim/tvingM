@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>결제 실패 - NADA FASHION</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
+            <i class="fas fa-times-circle text-6xl text-red-500 mb-4"></i>
+            <h1 class="text-3xl font-bold mb-4">결제가 취소되었습니다</h1>
+            <p class="text-gray-600 mb-2" id="error-message">결제 처리 중 문제가 발생했습니다.</p>
+            <p class="text-gray-600 mb-6">다시 시도해주세요.</p>
+            <button onclick="location.href='/static/index.html'" class="bg-pink-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-pink-700 transition">
+                돌아가기
+            </button>
+        </div>
+    </div>
+    
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const message = urlParams.get('message');
+        const code = urlParams.get('code');
+        
+        if (message) {
+            document.getElementById('error-message').textContent = message;
+        }
+        
+        console.log('결제 실패:', { code, message });
+    </script>
+</body>
+</html>
